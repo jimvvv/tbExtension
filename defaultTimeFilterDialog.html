@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Configure Extension</title>
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs-3.3.7/jq-3.2.1/jq-3.2.1/dt-1.10.16/b-1.4.2/b-colvis-1.4.2/cr-1.4.1/fh-3.1.3/r-2.2.0/sc-1.4.3/datatables.min.css"/>
+    <script type="text/javascript" src="https://cdn.datatables.net/v/bs-3.3.7/jq-3.2.1/jq-3.2.1/dt-1.10.16/b-1.4.2/b-colvis-1.4.2/cr-1.4.1/fh-3.1.3/r-2.2.0/sc-1.4.3/datatables.min.js"></script>
+
+    <!-- Extensions Library (this will be hosted on a CDN eventually) -->
+    <script src="../../lib/tableau-extensions-1.latest.js"></script>
+
+    <script src="./defaultTimeFilterDialog.js"></script>
+</head>
+<body>
+    <div class="container">
+      <h4>Default Time Filter Extension</h4>
+      <p>
+        This extension makes the time filter default to last complete fiscal quarter.
+      </p>
+      <hr />
+
+<!--       <h5>Apply to these datasources: </h5>
+      <div style="margin-left: 14px" id="datasources">
+      </div> -->
+      <h5>Fiscal Year Start Month:</h5>
+      <input style="margin-left: 14px" type="number" id="startMonth" min="1" max="12">
+
+      <hr />
+      <button id="closeButton">Close</button>
+    </div>
+</body>
+</html>

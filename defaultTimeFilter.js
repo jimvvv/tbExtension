@@ -14,10 +14,10 @@
             const dashboardName = tableau.extensions.dashboardContent.dashboard.name;
             // $('#choose_sheet_title').text(dashboardName);
 
-            // alert(dashboardName);
-            fetchDataSources();
+            alert(dashboardName);
+            // fetchDataSources();
 
-            fetchFilters();
+            // fetchFilters();
         });
     });
 
