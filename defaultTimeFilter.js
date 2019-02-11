@@ -14,10 +14,10 @@
             const dashboardName = tableau.extensions.dashboardContent.dashboard.name;
             // $('#choose_sheet_title').text(dashboardName);
 
-            alert(dashboardName);
-            // fetchDataSources();
+            // alert(dashboardName);
+            fetchDataSources();
 
-            // fetchFilters();
+            fetchFilters();
         });
     });
 
@@ -49,7 +49,7 @@
         // This uses the window.location.origin property to retrieve the scheme, hostname, and 
         // port where the parent extension is currently running, so this string doesn't have
         // to be updated if the extension is deployed to a new location.
-        const popupUrl = `${window.location.origin}/MySamples/HelloWorld/defaultTimeFilterDialog.html`;
+        const popupUrl = `${window.location.origin}/defaultTimeFilterDialog.html`;
 
         let startMonth = getFiscalStartMonthSetting();
         if (startMonth == undefined) {
