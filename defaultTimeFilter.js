@@ -59,12 +59,15 @@
             for (let i in dataSources) {
                 dataSources[i].refreshAsync().then(function() {
                     dataSources[i].getUnderlyingDataAsync({
-                        columnsToInclude: ["Month Of Year", "Fiscal Quarter", "Fiscal Month Of Year"],
+                        // columnsToInclude: ["Month Of Year", "Fiscal Quarter", "Fiscal Month Of Year"],
                         maxRows: 1000
                     }).then(dataTable => {
                         // console.log(dataTable);
-                        targetRow = dataTable.data.find(row => row[1].value == "Q1" && row[2].value == "1");
-                        minMonth = targetRow[0].value;
+                        let columnA = dataTable.columns.find(column => column.fieldName === "Month Of Year");
+                        let columnB = dataTable.columns.find(column => column.fieldName === "Fiscal Quarter");
+                        let columnC = dataTable.columns.find(column => column.fieldName === "Fiscal Month Of Year");
+                        targetRow = dataTable.data.find(row => row[columnB.index].value == "Q1" && row[columnC.index].value == "1");
+                        minMonth = targetRow[columnA.index].value;
                         displayDialog(popupUrl, minMonth);
                     }).catch((error) => {
                         displayDialog(popupUrl, fiscalYearStartMonth);
@@ -184,7 +187,7 @@
             if (startMonth != undefined) {
                 refreshFiscalFilter(startMonth);
             } else {
-                alert('Please validate or set FiscalYearStartMonth in configuration dialog.');
+                alert('Please validate FiscalYearStartMonth in configuration dialog.');
             }
         });
     }
