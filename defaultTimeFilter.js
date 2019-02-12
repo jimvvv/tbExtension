@@ -179,13 +179,13 @@
                     timefilters.push(filter);
                 });
             });
-            // alert('Done');
-
+            
             let startMonth = getFiscalStartMonthSetting();
             if (startMonth != undefined) {
                 refreshFiscalFilter(startMonth);
+            } else {
+                alert('Please validate or set FiscalYearStartMonth in configuration dialog.');
             }
-
         });
     }
 
