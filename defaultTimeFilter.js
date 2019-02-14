@@ -7,7 +7,7 @@
     let timefilters = [];
     let dataSources = {};
     // Use the jQuery document ready signal to know when everything has been initialized
-    $(document).ready(function() {
+    $(document).one('ready',function() {
         // Add your startup code here
         tableau.extensions.initializeAsync({ 'configure': configure }).then(function() {
             // Get the dashboard name from the tableau namespace and set it as our title
@@ -68,8 +68,10 @@
                         let columnC = dataTable.columns.find(column => column.fieldName === "Fiscal Month Of Year");
                         targetRow = dataTable.data.find(row => row[columnB.index].value == "Q1" && row[columnC.index].value == "1");
                         minMonth = targetRow[columnA.index].value;
+                        tableau.extensions.settings.set(fiscalYearStartMonthKey, minMonth);
                         displayDialog(popupUrl, minMonth);
                     }).catch((error) => {
+                        tableau.extensions.settings.set(fiscalYearStartMonthKey, fiscalYearStartMonth);
                         displayDialog(popupUrl, fiscalYearStartMonth);
                     });
                 });
