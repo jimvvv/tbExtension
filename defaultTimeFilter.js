@@ -7,7 +7,8 @@
     let timefilters = [];
     let dataSources = {};
     // Use the jQuery document ready signal to know when everything has been initialized
-    $(document).one('ready',function() {
+    $(document).ready(function() {
+        if(sessionStorage.extensionRun){return;}
         // Add your startup code here
         tableau.extensions.initializeAsync({ 'configure': configure }).then(function() {
             // Get the dashboard name from the tableau namespace and set it as our title
@@ -18,6 +19,12 @@
             fetchDataSources();
 
             fetchFilters();
+
+            if (typeof(Storage) !== "undefined") {
+                sessionStorage.extensionRun = 1;
+            } else {
+                // Sorry! No Web Storage support..
+            }
         });
     });
 
@@ -184,7 +191,7 @@
                     timefilters.push(filter);
                 });
             });
-            
+
             let startMonth = getFiscalStartMonthSetting();
             if (startMonth != undefined) {
                 refreshFiscalFilter(startMonth);
