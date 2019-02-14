@@ -8,12 +8,14 @@
     let dataSources = {};
     // Use the jQuery document ready signal to know when everything has been initialized
     $(document).ready(function() {
-        if(sessionStorage.extensionRun){return;}
         // Add your startup code here
         tableau.extensions.initializeAsync({ 'configure': configure }).then(function() {
             // Get the dashboard name from the tableau namespace and set it as our title
             const dashboardName = tableau.extensions.dashboardContent.dashboard.name;
             // $('#choose_sheet_title').text(dashboardName);
+
+            if (sessionStorage.dashboardName == dashboardName) { return; }
+
 
             // alert(dashboardName);
             fetchDataSources();
@@ -21,7 +23,7 @@
             fetchFilters();
 
             if (typeof(Storage) !== "undefined") {
-                sessionStorage.extensionRun = 1;
+                sessionStorage.dashboardName = dashboardName;
             } else {
                 // Sorry! No Web Storage support..
             }
