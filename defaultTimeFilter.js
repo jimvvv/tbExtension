@@ -18,7 +18,7 @@
 
 
             // alert(dashboardName);
-            fetchDataSources();
+            // fetchDataSources();
 
             fetchFilters();
 
@@ -38,7 +38,7 @@
             dataSourceFetchPromises.push(worksheet.getDataSourcesAsync());
         });
 
-        Promise.all(dataSourceFetchPromises).then(function(fetchResults) {
+        return Promise.all(dataSourceFetchPromises).then(function(fetchResults) {
             fetchResults.forEach(function(dataSourcesForWorksheet) {
                 dataSourcesForWorksheet.forEach(function(dataSource) {
                     if (!dataSources[dataSource.id]) {
@@ -46,6 +46,7 @@
                     }
                 });
             });
+            return dataSources;
         });
     }
 
@@ -59,32 +60,35 @@
         // port where the parent extension is currently running, so this string doesn't have
         // to be updated if the extension is deployed to a new location.
         const popupUrl = `${window.location.origin}/tbExtension/defaultTimeFilterDialog.html`;
+        // const popupUrl = `${window.location.origin}/MySamples/tbExtension/defaultTimeFilterDialog.html`;
 
         let startMonth = getFiscalStartMonthSetting();
         if (startMonth == undefined) {
             let minMonth;
             let targetRow;
 
-            for (let i in dataSources) {
-                dataSources[i].refreshAsync().then(function() {
-                    dataSources[i].getUnderlyingDataAsync({
-                        // columnsToInclude: ["Month Of Year", "Fiscal Quarter", "Fiscal Month Of Year"],
-                        maxRows: 1000
-                    }).then(dataTable => {
-                        // console.log(dataTable);
-                        let columnA = dataTable.columns.find(column => column.fieldName === "Month Of Year");
-                        let columnB = dataTable.columns.find(column => column.fieldName === "Fiscal Quarter");
-                        let columnC = dataTable.columns.find(column => column.fieldName === "Fiscal Month Of Year");
-                        targetRow = dataTable.data.find(row => row[columnB.index].value == "Q1" && row[columnC.index].value == "1");
-                        minMonth = targetRow[columnA.index].value;
-                        tableau.extensions.settings.set(fiscalYearStartMonthKey, minMonth);
-                        displayDialog(popupUrl, minMonth);
-                    }).catch((error) => {
-                        tableau.extensions.settings.set(fiscalYearStartMonthKey, fiscalYearStartMonth);
-                        displayDialog(popupUrl, fiscalYearStartMonth);
+            fetchDataSources().then(function(dataSources) {
+                for (let i in dataSources) {
+                    dataSources[i].refreshAsync().then(function() {
+                        dataSources[i].getUnderlyingDataAsync({
+                            // columnsToInclude: ["Month Of Year", "Fiscal Quarter", "Fiscal Month Of Year"],
+                            maxRows: 1000
+                        }).then(dataTable => {
+                            // console.log(dataTable);
+                            let columnA = dataTable.columns.find(column => column.fieldName === "Month Of Year");
+                            let columnB = dataTable.columns.find(column => column.fieldName === "Fiscal Quarter");
+                            let columnC = dataTable.columns.find(column => column.fieldName === "Fiscal Month Of Year");
+                            targetRow = dataTable.data.find(row => row[columnB.index].value == "Q1" && row[columnC.index].value == "1");
+                            minMonth = targetRow[columnA.index].value;
+                            tableau.extensions.settings.set(fiscalYearStartMonthKey, minMonth);
+                            displayDialog(popupUrl, minMonth);
+                        }).catch((error) => {
+                            tableau.extensions.settings.set(fiscalYearStartMonthKey, fiscalYearStartMonth);
+                            displayDialog(popupUrl, fiscalYearStartMonth);
+                        });
                     });
-                });
-            }
+                }
+            });
         } else {
             displayDialog(popupUrl, startMonth);
         }
@@ -124,15 +128,7 @@
     }
 
     function refreshFiscalFilter(startMonth) {
-        // The close payload is returned from the popup extension via the closeDialog method.
         let lastCompleteFiscalQuarterMoment = getLastCompleteFiscalQuarter(startMonth);
-
-        // let lastCompleteFiscalQuarter = '';
-        // if (lastCompleteFiscalQuarterMoment.nextYear == null) {
-        //     lastCompleteFiscalQuarter = lastCompleteFiscalQuarter.concat(lastCompleteFiscalQuarterMoment.year, '/Q', lastCompleteFiscalQuarterMoment.quarter);
-        // } else {
-        //     lastCompleteFiscalQuarter = lastCompleteFiscalQuarter.concat(lastCompleteFiscalQuarterMoment.nextYear, '/Q', lastCompleteFiscalQuarterMoment.quarter);
-        // }
         let lastCompleteFiscalYear;
         let lastCompleteFiscalQuarter;
         if (lastCompleteFiscalQuarterMoment.nextYear == null) {
@@ -186,9 +182,6 @@
         // to finish before displaying the results to the user.
         Promise.all(filterFetchPromises).then(function(fetchResults) {
             fetchResults.forEach(function(filtersForWorksheet) {
-                // filtersForWorksheet.forEach(function (filter) {
-                //   dashboardfilters.push(filter);
-                // });
                 filtersForWorksheet.filter(getYearQuarterFilters).forEach(function(filter) {
                     timefilters.push(filter);
                 });
@@ -209,29 +202,70 @@
         return patt.test(filter.fieldName)
     }
 
+    function getYearFilter(filter) {
+        let patt = /Fiscal Year.*/g;
+        return patt.test(filter.fieldName)
+    }
+
+    function getQuarterFilter(filter) {
+        let patt = /Fiscal Quarter.*/g;
+        return patt.test(filter.fieldName)
+    }
+
     function applyDefaultTimeFilter(defaultFiscalYear, defaultFiscalQuarter) {
         let defaultYearArray = [];
         let defaultQuarterArray = [];
+        let fiscalYearSetFlag = false;
+        let fiscalQuarterSetFlag = false;
+
         defaultYearArray.push(defaultFiscalYear);
         defaultQuarterArray.push(defaultFiscalQuarter);
         const dashboard = tableau.extensions.dashboardContent.dashboard;
 
-        timefilters.forEach(function(filter) {
-            const worksheetName = filter.worksheetName;
-            const targetWorksheet = dashboard.worksheets.find(function(worksheet) {
-                return worksheet.name == worksheetName;
+
+        let fiscalYearFilter = timefilters.find(getYearFilter);
+        let fiscalQuarterFilter = timefilters.find(getQuarterFilter);
+        if (fiscalYearFilter) {
+            const yearFilterWorksheetName = fiscalYearFilter.worksheetName;
+            const yearFilterWorksheet = dashboard.worksheets.find(function(worksheet) {
+                return worksheet.name == yearFilterWorksheetName;
             });
+            yearFilterWorksheet.applyFilterAsync(fiscalYearFilter.fieldName, defaultYearArray, tableau.FilterUpdateType.Replace);
+        }
+        if (fiscalQuarterFilter) {
+            const quarterFilterWorksheetName = fiscalQuarterFilter.worksheetName;
+            const quarterFilterWorksheet = dashboard.worksheets.find(function(worksheet) {
+                return worksheet.name == quarterFilterWorksheetName;
+            });
+            quarterFilterWorksheet.applyFilterAsync(fiscalQuarterFilter.fieldName, defaultQuarterArray, tableau.FilterUpdateType.Replace);
+        }
 
-            // targetWorksheet.applyFilterAsync(filter.fieldName, defaultArray, tableau.FilterUpdateType.Replace);
+        // timefilters.forEach(function(filter) {
+        //     const worksheetName = filter.worksheetName;
+        //     const targetWorksheet = dashboard.worksheets.find(function(worksheet) {
+        //         return worksheet.name == worksheetName;
+        //     });
 
-            if (filter.fieldName.startsWith('Fiscal Year')) {
-                targetWorksheet.applyFilterAsync(filter.fieldName, defaultYearArray, tableau.FilterUpdateType.Replace);
-            }
+        //     // targetWorksheet.applyFilterAsync(filter.fieldName, defaultArray, tableau.FilterUpdateType.Replace);
 
-            if (filter.fieldName.startsWith('Fiscal Quarter')) {
-                targetWorksheet.applyFilterAsync(filter.fieldName, defaultQuarterArray, tableau.FilterUpdateType.Replace);
-            }
-        });
+        //     if (filter.fieldName.startsWith('Fiscal Year')) {
+        //         targetWorksheet.applyFilterAsync(filter.fieldName, defaultYearArray, tableau.FilterUpdateType.Replace).then(function(fn){
+        //             fiscalYearSetFlag = true;
+        //             if (fiscalYearSetFlag && fiscalQuarterSetFlag){
+        //                 return;
+        //             }
+        //         });
+        //     }
+
+        //     if (filter.fieldName.startsWith('Fiscal Quarter')) {
+        //         targetWorksheet.applyFilterAsync(filter.fieldName, defaultQuarterArray, tableau.FilterUpdateType.Replace).then(function(fn){
+        //             fiscalQuarterSetFlag = true;
+        //             if (fiscalYearSetFlag && fiscalQuarterSetFlag){
+        //                 return;
+        //             }
+        //         });
+        //     }
+        // });
     }
 
     // Constructs UI that displays all the dataSources in this dashboard
